@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Ficha Clínica de Lactancia</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage: #7a9e87;
+    --sage-light: #a8c4b0;
+    --sage-dark: #4e7a5e;
+    --cream: #faf7f2;
+    --warm: #fff9f4;
+    --blush: #e8c4b0;
+    --blush-dark: #c9956e;
+    --text: #2c2c2c;
+    --muted: #6b6b6b;
+    --border: #d6cfc5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--cream); font-family: 'Source Sans 3', sans-serif; color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    position: fixed; inset: 0; background: var(--cream);
+    display: flex; align-items: center; justify-content: center; z-index: 9999;
+  }
+  .login-box {
+    background: white; border-radius: 16px; padding: 44px 40px;
+    max-width: 360px; width: 90%; border: 1px solid var(--border); text-align: center;
+  }
+  .login-box .icon { font-size: 2.4rem; margin-bottom: 14px; }
+  .login-box h2 { font-family: 'Libre Baskerville', serif; color: var(--sage-dark); font-size: 1.2rem; margin-bottom: 6px; }
+  .login-box p { color: var(--muted); font-size: 0.87rem; margin-bottom: 24px; }
+  .login-box input {
+    width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 0.95rem; outline: none; margin-bottom: 10px;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .login-box input:focus { border-color: var(--sage); }
+  .login-error { color: var(--blush-dark); font-size: 0.85rem; margin-bottom: 8px; display: none; }
+  .btn-login {
+    width: 100%; padding: 12px; background: linear-gradient(135deg, var(--sage-dark), var(--sage));
+    color: white; border: none; border-radius: 50px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer; font-family: 'Source Sans 3', sans-serif;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--sage-dark), var(--sage));
+    padding: 24px 32px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-left span { font-size: 1.8rem; }
+  .header-left h1 { font-family: 'Libre Baskerville', serif; color: white; font-size: 1.2rem; }
+  .header-left p { color: rgba(255,255,255,0.75); font-size: 0.82rem; }
+  .btn-new {
+    background: white; color: var(--sage-dark); border: none; padding: 10px 20px;
+    border-radius: 50px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif; text-decoration: none; display: inline-block;
+  }
+
+  /* MAIN */
+  .main { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
+
+  /* SEARCH */
+  .search-bar {
+    background: white; border-radius: 12px; border: 1px solid var(--border);
+    padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center;
+  }
+  .search-bar input {
+    flex: 1; border: none; outline: none; font-size: 1rem;
+    font-family: 'Source Sans 3', sans-serif; color: var(--text); background: transparent;
+  }
+  .search-bar input::placeholder { color: var(--muted); }
+  .search-icon { color: var(--sage); font-size: 1.2rem; }
+  .result-count { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+
+  /* ESTADOS */
+  .state-box {
+    background: white; border-radius: 12px; border: 1px solid var(--border);
+    padding: 48px; text-align: center; color: var(--muted);
+  }
+  .state-box .state-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .state-box p { font-size: 0.95rem; }
+
+  /* LISTA PACIENTES */
+  .patient-list { display: flex; flex-direction: column; gap: 10px; }
+  .patient-card {
+    background: white; border-radius: 12px; border: 1px solid var(--border);
+    padding: 18px 22px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .patient-card:hover { border-color: var(--sage); transform: translateY(-1px); }
+  .patient-card.active { border-color: var(--sage); border-left: 4px solid var(--sage-dark); }
+  .patient-info h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .patient-info p { font-size: 0.83rem; color: var(--muted); }
+  .patient-meta { text-align: right; }
+  .patient-meta .badge {
+    background: rgba(122,158,135,0.12); color: var(--sage-dark);
+    padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+    display: inline-block; margin-bottom: 4px;
+  }
+  .patient-meta p { font-size: 0.78rem; color: var(--muted); }
+  .chevron { color: var(--sage-light); font-size: 1.1rem; margin-left: 12px; }
+
+  /* DETALLE */
+  #detail-view { display: none; }
+  .detail-header {
+    background: white; border-radius: 12px; border: 1px solid var(--border);
+    padding: 22px 24px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .detail-header h2 { font-family: 'Libre Baskerville', serif; font-size: 1.3rem; color: var(--sage-dark); }
+  .detail-header p { color: var(--muted); font-size: 0.88rem; margin-top: 3px; }
+  .btn-back {
+    background: none; border: 1.5px solid var(--border); color: var(--muted);
+    padding: 8px 18px; border-radius: 50px; font-size: 0.85rem; cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif; transition: all 0.2s;
+  }
+  .btn-back:hover { border-color: var(--sage); color: var(--sage-dark); }
+
+  /* HISTORIAL TABS */
+  .history-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .history-tab {
+    padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border);
+    font-size: 0.83rem; cursor: pointer; transition: all 0.2s;
+    font-family: 'Source Sans 3', sans-serif; background: white; color: var(--muted);
+  }
+  .history-tab.active { background: var(--sage-dark); color: white; border-color: var(--sage-dark); }
+
+  /* FICHA DETALLE */
+  .ficha-detail { display: flex; flex-direction: column; gap: 14px; }
+  .ficha-section {
+    background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden;
+  }
+  .ficha-section-header {
+    padding: 14px 20px; background: linear-gradient(90deg, #f5f1eb, #faf7f2);
+    border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+  }
+  .ficha-section-num {
+    width: 26px; height: 26px; background: var(--sage); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+  }
+  .ficha-section-title { font-family: 'Libre Baskerville', serif; font-size: 0.9rem; color: var(--sage-dark); font-weight: 700; }
+  .ficha-section-body { padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ficha-field { display: flex; flex-direction: column; gap: 2px; }
+  .ficha-field.full { grid-column: 1 / -1; }
+  .ficha-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .ficha-value { font-size: 0.9rem; color: var(--text); line-height: 1.4; }
+  .ficha-value.empty { color: var(--border); font-style: italic; }
+
+  /* FECHA BADGE en historial */
+  .fecha-badge {
+    display: inline-block; background: rgba(201,149,110,0.15); color: var(--blush-dark);
+    padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 14px;
+  }
+
+  @media (max-width: 600px) {
+    .ficha-section-body { grid-template-columns: 1fr; }
+    .ficha-field.full { grid-column: 1; }
+    .header { flex-direction: column; gap: 12px; text-align: center; }
+    .patient-card { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="icon">🤱</div>
+    <h2>Dashboard de Lactancia</h2>
+    <p>Acceso restringido a profesionales</p>
+    <input type="password" id="pwd" placeholder="Contraseña" onkeydown="if(event.key==='Enter') login()">
+    <div class="login-error" id="login-err">Contraseña incorrecta</div>
+    <button class="btn-login" onclick="login()">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <div class="header">
+    <div class="header-left">
+      <span>🤱</span>
+      <div>
+        <h1>Dashboard Clínico</h1>
+        <p>Ficha Clínica de Lactancia — CONUTRILAM</p>
+      </div>
+    </div>
+    <a href="index.html" class="btn-new">+ Nueva ficha</a>
+  </div>
+
+  <div class="main">
+    <!-- VISTA LISTA -->
+    <div id="list-view">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Buscar por nombre de madre o lactante..." oninput="filterPatients()">
+        <span class="result-count" id="result-count"></span>
+      </div>
+      <div id="patients-container">
+        <div class="state-box">
+          <div class="state-icon">⏳</div>
+          <p>Cargando fichas...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA DETALLE -->
+    <div id="detail-view">
+      <div class="detail-header">
+        <div>
+          <h2 id="detail-name">—</h2>
+          <p id="detail-sub">—</p>
+        </div>
+        <button class="btn-back" onclick="showList()">← Volver</button>
+      </div>
+      <div class="history-tabs" id="history-tabs"></div>
+      <div class="ficha-detail" id="ficha-detail"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzxQ-Bz2hZuMXnZM8KVbNyRgxg7y0yEnwYPc2ztp9tRO1hQTZ67IHmI94M1vaO9PGm9Rg/exec';
+  const PASSWORD = 'CONUTRILAM';
+  let allData = [];
+  let groupedPatients = {};
+  let currentPatient = null;
+
+  // LOGIN
+  function login() {
+    if (document.getElementById('pwd').value === PASSWORD) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      sessionStorage.setItem('auth_dash', 'ok');
+      loadData();
+    } else {
+      document.getElementById('login-err').style.display = 'block';
+      document.getElementById('pwd').value = '';
+    }
+  }
+  if (sessionStorage.getItem('auth_dash') === 'ok') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadData();
+  }
+
+  // CARGAR DATOS
+  async function loadData() {
+    try {
+      const res = await fetch(SCRIPT_URL);
+      allData = await res.json();
+      groupPatients();
+      renderList(Object.keys(groupedPatients));
+    } catch(e) {
+      document.getElementById('patients-container').innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">⚠️</div>
+          <p>Error al cargar los datos. Revisa la conexión.</p>
+        </div>`;
+    }
+  }
+
+  // AGRUPAR POR NOMBRE DE MADRE
+  function groupPatients() {
+    groupedPatients = {};
+    allData.forEach(row => {
+      const key = (row['Nombre madre'] || 'Sin nombre').trim();
+      if (!groupedPatients[key]) groupedPatients[key] = [];
+      groupedPatients[key].push(row);
+    });
+  }
+
+  // FILTRAR
+  function filterPatients() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const keys = Object.keys(groupedPatients).filter(k =>
+      k.toLowerCase().includes(q) ||
+      groupedPatients[k].some(r => (r['Nombre lactante'] || '').toLowerCase().includes(q))
+    );
+    renderList(keys);
+  }
+
+  // RENDERIZAR LISTA
+  function renderList(keys) {
+    const container = document.getElementById('patients-container');
+    document.getElementById('result-count').textContent = keys.length + ' paciente(s)';
+    if (keys.length === 0) {
+      container.innerHTML = `<div class="state-box"><div class="state-icon">🔍</div><p>No se encontraron resultados</p></div>`;
+      return;
+    }
+    container.innerHTML = `<div class="patient-list">${keys.sort().map(k => {
+      const fichas = groupedPatients[k];
+      const ultima = fichas[fichas.length - 1];
+      const lactante = ultima['Nombre lactante'] || '—';
+      const fecha = ultima['Fecha y hora'] || '—';
+      return `<div class="patient-card" onclick="showDetail('${k.replace(/'/g,"\\'")}')">
+        <div class="patient-info">
+          <h3>${k}</h3>
+          <p>Lactante: ${lactante}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="patient-meta">
+            <div class="badge">${fichas.length} ficha${fichas.length>1?'s':''}</div>
+            <p>Última: ${fecha.split(',')[0] || fecha}</p>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  // MOSTRAR DETALLE
+  function showDetail(nombre) {
+    currentPatient = nombre;
+    const fichas = groupedPatients[nombre];
+    const ultima = fichas[fichas.length - 1];
+    document.getElementById('detail-name').textContent = nombre;
+    document.getElementById('detail-sub').textContent = `Lactante: ${ultima['Nombre lactante'] || '—'} · ${fichas.length} ficha(s) registrada(s)`;
+    document.getElementById('list-view').style.display = 'none';
+    document.getElementById('detail-view').style.display = 'block';
+
+    // Tabs por cada ficha
+    const tabs = document.getElementById('history-tabs');
+    tabs.innerHTML = fichas.map((f, i) =>
+      `<button class="history-tab ${i===fichas.length-1?'active':''}" onclick="showFicha(${i})">${f['Fecha y hora'] ? f['Fecha y hora'].split(',')[0] : 'Ficha '+(i+1)}</button>`
+    ).join('');
+    showFicha(fichas.length - 1);
+  }
+
+  function showList() {
+    document.getElementById('list-view').style.display = 'block';
+    document.getElementById('detail-view').style.display = 'none';
+  }
+
+  // RENDERIZAR FICHA
+  function showFicha(idx) {
+    document.querySelectorAll('.history-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+    const f = groupedPatients[currentPatient][idx];
+    const val = (v) => v ? `<span class="ficha-value">${v}</span>` : `<span class="ficha-value empty">No registrado</span>`;
+    const field = (label, key, full=false) =>
+      `<div class="ficha-field${full?' full':''}"><span class="ficha-label">${label}</span>${val(f[key])}</div>`;
+
+    document.getElementById('ficha-detail').innerHTML = `
+      <div class="fecha-badge">📅 ${f['Fecha y hora'] || '—'}</div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">II</div><span class="ficha-section-title">Datos de identificación</span></div>
+        <div class="ficha-section-body">
+          ${field('Nombre madre','Nombre madre')}
+          ${field('Edad','Edad madre')}
+          ${field('Teléfono','Teléfono')}
+          ${field('Nombre lactante','Nombre lactante')}
+          ${field('Fecha nacimiento lactante','Fecha nacimiento lactante')}
+          ${field('Lugar nacimiento','Lugar nacimiento')}
+          ${field('Edad gestacional','Edad gestacional (sem)')}
+          ${field('Edad cronológica','Edad cronológica')}
+          ${field('Edad corregida','Edad corregida')}
+          ${field('Apoyo cuidado','Apoyo cuidado')}
+          ${field('Actitud familia','Actitud familia')}
+          ${field('Retorno laboral','Retorno laboral')}
+          ${field('Red de apoyo','Red de apoyo',true)}
+        </div>
+      </div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">III</div><span class="ficha-section-title">Motivo de consulta</span></div>
+        <div class="ficha-section-body">
+          ${field('Motivo','Motivo de consulta',true)}
+        </div>
+      </div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">IV</div><span class="ficha-section-title">Situación actual de lactancia</span></div>
+        <div class="ficha-section-body">
+          ${field('Frecuencia diurna','Frecuencia diurna')}
+          ${field('Frecuencia nocturna','Frecuencia nocturna')}
+          ${field('Duración mamada','Duración mamada')}
+          ${field('Lacta de','Lacta de')}
+          ${field('Intervalo más largo','Intervalo más largo')}
+          ${field('Uso chupete','Uso chupete')}
+          ${field('Uso mamadera','Uso mamadera')}
+          ${field('Uso pezoneras','Uso pezoneras')}
+          ${field('Suplementos','Suplementos',true)}
+          ${field('Método administración','Método administración')}
+        </div>
+      </div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">V</div><span class="ficha-section-title">Evaluación del bebé</span></div>
+        <div class="ficha-section-body">
+          ${field('Peso nacimiento','Peso nacimiento (kg)')}
+          ${field('Peso actual','Peso actual (kg)')}
+          ${field('Ganancia ponderal adecuada','Ganancia ponderal adecuada')}
+          ${field('Talla nacimiento','Talla nacimiento (cm)')}
+          ${field('Talla actual','Talla actual (cm)')}
+          ${field('PC nacimiento','PC nacimiento (cm)')}
+          ${field('PC actual','PC actual (cm)')}
+          ${field('P/E','P/E')} ${field('T/E','T/E')}
+          ${field('P/T','P/T')} ${field('PCE','PCE')}
+          ${field('Estado nutricional','Estado nutricional',true)}
+          ${field('Micciones >6/día','Micciones >6/día')}
+          ${field('Deposiciones/día','Deposiciones/día')}
+          ${field('Características deposiciones','Características deposiciones',true)}
+          ${field('Sueño','Sueño')}
+          ${field('Llanto frecuente','Llanto frecuente')}
+          ${field('Antecedentes mórbidos bebé','Antecedentes mórbidos bebé',true)}
+          ${field('Examen físico boca','Examen físico boca',true)}
+        </div>
+      </div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">VI</div><span class="ficha-section-title">Embarazo, parto y primeras horas</span></div>
+        <div class="ficha-section-body">
+          ${field('Tipo parto','Tipo parto')}
+          ${field('Piel con piel','Piel con piel')}
+          ${field('Inicio lactancia 2h','Inicio lactancia 2h')}
+          ${field('Alojamiento conjunto','Alojamiento conjunto')}
+          ${field('Alimentación pre-láctea','Alimentación pre-láctea')}
+          ${field('Razón pre-láctea','Razón pre-láctea')}
+          ${field('Experiencia parto','Experiencia parto',true)}
+        </div>
+      </div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">VII</div><span class="ficha-section-title">Evaluación de la madre</span></div>
+        <div class="ficha-section-body">
+          ${field('Tipo pezón','Tipo pezón')}
+          ${field('Signos y síntomas','Signos síntomas mamarios')}
+          ${field('Cirugía mamaria','Cirugía mamaria')}
+          ${field('Fármacos','Fármacos')}
+          ${field('Consumo','Consumo (alcohol/tabaco/drogas)')}
+          ${field('Peso pregestacional','Peso pregestacional')}
+          ${field('Actitud/Motivación','Actitud motivación',true)}
+          ${field('Manejos realizados','Manejos',true)}
+        </div>
+      </div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">VIII</div><span class="ficha-section-title">Hipótesis diagnóstica</span></div>
+        <div class="ficha-section-body">
+          ${field('Hipótesis','Hipótesis diagnóstica',true)}
+        </div>
+      </div>
+
+      <div class="ficha-section">
+        <div class="ficha-section-header"><div class="ficha-section-num">IX</div><span class="ficha-section-title">Plan de intervención</span></div>
+        <div class="ficha-section-body">
+          ${field('Plan','Plan de intervención',true)}
+          ${field('Derivaciones','Derivaciones')}
+          ${field('Próximo control','Fecha próximo control')}
+        </div>
+      </div>`;
+  }
+</script>
+</body>
+</html>
